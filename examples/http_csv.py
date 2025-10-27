@@ -21,20 +21,29 @@
 import ray
 
 from datafusion_ray import DFRayContext, df_ray_runtime_env
+import time
 
 
 def main():
     ctx = DFRayContext()
-    ctx.register_csv(
-        "aggregate_test_100",
-        "https://github.com/apache/arrow-testing/raw/master/data/csv/aggregate_test_100.csv",
+    # ctx.register_csv(
+    #     "aggregate_test_100",
+    #     "https://github.com/apache/arrow-testing/raw/master/data/csv/aggregate_test_100.csv",
+    # )
+
+    ctx.register_parquet(
+        "hits",
+        "https://datasets.clickhouse.com/hits_compatible/athena_partitioned/hits_1.parquet",
     )
-
-    df = ctx.sql("SELECT c1,c2,c3 FROM aggregate_test_100 LIMIT 5")
-
+    start = time.perf_counter()
+    df = ctx.sql('SELECT SUM(hits."Age") FROM hits')
     df.show()
+    end = time.perf_counter()
+    print(f"time taken: {end - start} secs")
 
 
 if __name__ == __name__:
-    ray.init(namespace="http_csv", runtime_env=df_ray_runtime_env)
+    ray.init(
+        namespace="http_csv", runtime_env=df_ray_runtime_env, include_dashboard=False
+    )
     main()
